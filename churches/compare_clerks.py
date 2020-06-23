@@ -13,32 +13,50 @@ def get_clerk(addr, wait=0.5):
   addr_text.send_keys(addr)
   time.sleep(wait)
   addr_text.send_keys(Keys.ENTER)
-  time.sleep(wait)
-  result_elems = driver.find_elements_by_class_name('card-body')
-  result = result_elems[0].text
-  if 'Required field' in result: raise Exception
-  return result
+  time.sleep(2+wait)
+  county = driver.find_elements_by_class_name('local-clerk-county-name')[0].text
+  title = driver.find_elements_by_class_name('card-title')[0].text
+  body = driver.find_elements_by_class_name('card-body')[0].text
+  if 'Required field' in body: raise Exception
+  return dict(county=county, title=title, body=body)
 
 blobs = [json.loads(l[:-1]) for l in open('churches_w_geocodes.json')]
-mbs = [b for b in blobs if b['address'] and b['address'][-2:]=='MI']
+#mbs = [b for b in blobs if b['address'] and b['address'][-2:]=='MI']
+mbs = [json.loads(l[:-1]) for l in open('mi_churches_w_clerks_and_counties.json')]
+
+len([m for m in mbs if 'clerk' in m])
 
 # This block of code may need to be run multiple times with
 # different wait time until they are all done
+n_fail, n_success = 0, 0
 for mb in mbs:
   if 'clerk' in mb: continue
+  if 'Po Box' in mb['address']: continue
   print(mb['address'])
   try:
-    res = get_clerk(mb['address'], wait=3)
+    res = get_clerk(mb['address'], wait=1.5)
     mb['clerk'] = res
     print('success')
+    n_success += 1
   except KeyboardInterrupt: break
-  except:
-    print('failure')
-    continue
+  except Exception as e:
+    print('failure', e)
+    n_fail += 1
+    #continue
+  print('fail', n_fail, 'success', n_success)
+
+for mb in mbs:
+  open('mi_churches_w_clerks_and_counties.json', 'a').write(json.dumps(mb)+'\n')
+
 
 for mb in mbs:
   open('mi_churches_w_clerks.json', 'a').write(json.dumps(mb)+'\n')
 
 
+'''
+addr = '519 N Main St  Lanse  MI'
 
+result_elems = driver.find_elements_by_class_name('local-clerk-county-name')
+
+'''
 
