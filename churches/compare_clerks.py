@@ -1,3 +1,15 @@
+'''
+This script is used for gauging our accuracy in MI.
+The steps are:
+- Start with a file containing the scraped church blobs + geocoding.
+  This is a list of JSON blobs and is the main data structure of the script.
+- Use a web driver to find the correct official for the address of each church.
+- Use the geocoding latlng to get the FIPS code for each blob
+- look up our clerk for each blobs using the FIPS code
+- look at how often they matched, using email as an identifier
+
+'''
+
 import json, time
 import requests
 from selenium import webdriver
@@ -22,13 +34,14 @@ def get_clerk(addr, wait=0.5):
   return dict(county=county, title=title, body=body)
 
 blobs = [json.loads(l[:-1]) for l in open('churches_w_geocodes.json')]
-#mbs = [b for b in blobs if b['address'] and b['address'][-2:]=='MI']
-mbs = [json.loads(l[:-1]) for l in open('mi_churches_w_clerks_and_counties.json')]
+mbs = [b for b in blobs if b['address'] and b['address'][-2:]=='MI']
+#mbs = [json.loads(l[:-1]) for l in open('mi_churches_w_clerks_and_counties.json')]
 
+# May need to re-run this a few times to get all clerks
+# that can be gotten
 n_fail, n_success = 0, 0
 for mb in mbs:
   if 'clerk' in mb: continue
-  #if 'Po Box' in mb['address']: continue
   print(mb['address'])
   try:
     res = get_clerk(mb['address'], wait=2.5)
@@ -63,6 +76,8 @@ for i, m in enumerate(mbs):
 
 
 # Get our clerks using FIPS codes
+
+# This url worked the other day but is now gone
 our_url = 'https://raw.githubusercontent.com/mail-my-ballot/elections-officials/master/public/michigan.json'
 
 offs = requests.get(our_url).json()
