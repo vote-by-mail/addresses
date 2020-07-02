@@ -21,4 +21,3 @@ def requests_retry_session(
   session.mount('http://', adapter)
   session.mount('https://', adapter)
   return session
-
